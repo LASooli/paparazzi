@@ -18,7 +18,7 @@
 
     <define name="COLOR_OBJECT_DETECTOR_CAMERA2" value="front_camera|bottom_camera" description="Video device to use"/>
     <define name="COLOR_OBJECT_DETECTOR_FPS2" value="0" description="Desired FPS (0: camera rate)"/>
-    <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="0" description="Filter 1 min luminance"/>
+    <define name="COLOR_OBJECT_DETECTOR_LUM_MIN2" value="0" description="Filter 2 min luminance"/>
     <define name="COLOR_OBJECT_DETECTOR_LUM_MAX2" value="0" description="Filter 2 max luminance"/>
     <define name="COLOR_OBJECT_DETECTOR_CB_MIN2" value="0" description="Filter 2 min blue chroma"/>
     <define name="COLOR_OBJECT_DETECTOR_CB_MAX2" value="0" description="Filter 2 max blue chroma"/>

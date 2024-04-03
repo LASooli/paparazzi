@@ -211,49 +211,67 @@ uint32_t find_object_centroid(struct image_t *img, int32_t* p_xc, int32_t* p_yc,
                               uint8_t cb_min, uint8_t cb_max,
                               uint8_t cr_min, uint8_t cr_max)
 {
-  uint32_t cnt = 0;
+  uint32_t pixel_count = 0;
   uint32_t tot_x = 0;
   uint32_t tot_y = 0;
   uint8_t *buffer = img->buf;
+  
+  uint32_t x = 0;
+  uint32_t y = 0;
 
+  uint32_t p = 0;
+  uint32_t area = img->h * img->w;
+
+  /**Below uses a while loop rather than the old nested for loop.
+   * This new code saves thousands of multiplications and
+   * drastically increases drone computation speed, compared to original.
+  */
   // Go through all the pixels
-  for (uint16_t y = 0; y < img->h; y++) {
-    for (uint16_t x = 0; x < img->w; x ++) {
-      // Check if the color is inside the specified values
-      uint8_t *yp, *up, *vp;
-      if (x % 2 == 0) {
-        // Even x
-        up = &buffer[y * 2 * img->w + 2 * x];      // U
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x + 2];  // V
-        //yp = &buffer[y * 2 * img->w + 2 * x + 3]; // Y2
-      } else {
-        // Uneven x
-        up = &buffer[y * 2 * img->w + 2 * x - 2];  // U
-        //yp = &buffer[y * 2 * img->w + 2 * x - 1]; // Y1
-        vp = &buffer[y * 2 * img->w + 2 * x];      // V
-        yp = &buffer[y * 2 * img->w + 2 * x + 1];  // Y2
-      }
-      if ( (*yp >= lum_min) && (*yp <= lum_max) &&
-           (*up >= cb_min ) && (*up <= cb_max ) &&
-           (*vp >= cr_min ) && (*vp <= cr_max )) {
-        cnt ++;
-        tot_x += x;
-        tot_y += y;
-        if (draw){
-          *yp = 255;  // make pixel brighter in image
-        }
+  while (p < area) {
+    // Check if the color is inside the specified values
+    uint8_t *yp, *up, *vp;
+    uint32_t p2 = p+p; 
+    if (p % 2 == 0) {
+      // Even x
+      up = &buffer[p2];      // U
+      yp = &buffer[p2 + 1];  // Y1
+      vp = &buffer[p2 + 2];  // V
+      //yp = &buffer[p2 + 3]; // Y2
+    } else {
+      // Uneven x
+      up = &buffer[p2 - 2];  // U
+      //yp = &buffer[p2 - 1]; // Y1
+      vp = &buffer[p2];      // V
+      yp = &buffer[p2 + 1];  // Y2
+    }
+    if ( (*yp >= lum_min) && (*yp <= lum_max) &&
+          (*up >= cb_min ) && (*up <= cb_max ) &&
+          (*vp >= cr_min ) && (*vp <= cr_max )) {
+
+      pixel_count++;
+
+      tot_x += x;
+      tot_y += y;
+      if (draw){
+        *yp = 255;  // make pixel brighter in image. Comment this out to get clear footage
       }
     }
+    // Increment pixel
+    p ++;
+    x ++;
+    if (x >= img->w){
+      x = 0;
+      y ++;
+    }
   }
-  if (cnt > 0) {
-    *p_xc = (int32_t)roundf(tot_x / ((float) cnt) - img->w * 0.5f);
-    *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) cnt));
+    if (pixel_count > 0) {
+    *p_xc = (int32_t)roundf(tot_x / ((float) pixel_count) - img->w * 0.5f);
+    *p_yc = (int32_t)roundf(img->h * 0.5f - tot_y / ((float) pixel_count));
   } else {
     *p_xc = 0;
     *p_yc = 0;
   }
-  return cnt;
+    return pixel_count;
 }
 
 void color_object_detector_periodic(void)
